@@ -1,4 +1,4 @@
 database.yml
 secrets.yml
 *.log
-/recepies/*.pdf
+./recepies/*.pdf

@@ -8,9 +8,9 @@ class ReplyMarkupFormatter
 
   def get_markup
     hash = if @formating
-      { keyboard: array, resize_keyboard: true }
+      { keyboard: array }
     else
-      { keyboard: array.each_slice(2).to_a, resize_keyboard: true }
+      { keyboard: array.each_slice(2).to_a }
     end  
     Telegram::Bot::Types::ReplyKeyboardMarkup.new(hash)
   end

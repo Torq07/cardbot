@@ -145,29 +145,41 @@ class ChatMode
 	end
 
 	def redeem_succesful(card)
-		cid = card.customer_id
+		cid = card.customer_id||"not assigned"
 		balance = card.balance
 		card_id = card.id
-		text="Redemption Successful\nCust id: #{cid}\nCard No: #{card_id}\nNew Balance $#{balance}"
-		pdf=generate_pdf(cid,balance,card.id)
+		expire = card.expiring_date
+		text="Redemption Successful\n"+
+				 "Cust id: #{cid}\n"+
+				 "Card No: #{card_id}\n"+
+				 "New Balance $#{balance}\n"+
+				 "This Card will expire on #{expire}"
+		pdf=generate_pdf(card)
 		request(text:text,answers:@answers)
 		MessageSender.new(bot:bot, chat: message.from, document:pdf).send_document
 	end
 
-	def generate_pdf(cid,balance,card_id)
+	def generate_pdf(card)
 		time_now=Time.now.strftime("%Y_%m_%d_%H_%M")
-		pdf_name="Card_#{card_id}_#{time_now}.pdf"
+		pdf_name="Card_#{card.id}_#{time_now}.pdf"
 		Prawn::Document.generate("/home/torq07/Work/Fiverr/piousmusabaila/cardbot/recipies/#{pdf_name}") do
 			text "Redemption receipt", :align => :center, :size => 18
 			text "Date: #{Time.now.strftime("%Y/%m/%d %H:%M")}", :align => :center, :size => 16
 			move_down 20
-		  text "Cust id: #{cid}"
+			if card.customer_id
+		 	 text "Cust id: #{card.customer_id}"
+		 	else
+		 	 text "Cust id: not assigned"
+		 	end 
 			stroke_horizontal_rule
 			move_down 10
-		  text "Card No: #{card_id}"
+		  text "Card No: #{card.id}"
 			stroke_horizontal_rule
 			move_down 10
-		  text "New Balance: #{balance}"
+		  text "New Balance: #{card.balance}"
+			stroke_horizontal_rule
+			move_down 10
+		  text "This Card will expire on #{card.expiring_date}"
 			stroke_horizontal_rule
 			move_down 50
 			image "/home/torq07/Work/Fiverr/piousmusabaila/cardbot/recipies/app_icon.png", :position => :right, :width => 100, :height => 100

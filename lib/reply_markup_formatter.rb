@@ -12,7 +12,6 @@ class ReplyMarkupFormatter
     else
       { keyboard: array.each_slice(2).to_a, resize_keyboard: true }
     end  
-    p hash
     Telegram::Bot::Types::ReplyKeyboardMarkup.new(hash)
   end
 

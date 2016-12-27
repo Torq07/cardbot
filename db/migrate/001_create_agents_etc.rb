@@ -23,6 +23,7 @@ class CreateAgentsEtc < ActiveRecord::Migration
     create_table :cards, force: true do |t|
       t.string :status
       t.float :balance, default: 0
+      t.date :expiring_date
       t.references :card_product, index: true, foreign_key: true
       t.references :customer, index: true, foreign_key: true
     end

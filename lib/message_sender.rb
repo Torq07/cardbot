@@ -75,7 +75,7 @@ class MessageSender
   def send_document
     # document is path to file needed to send
     if File.exist?(document) 
-      bot.api.send_document(chat_id: chat.id, document: Faraday::UploadIO.new(document) )
+      bot.api.send_document(chat_id: chat.id, document: Faraday::UploadIO.new(document, 'application/pdf') )
     end  
   end
     

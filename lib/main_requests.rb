@@ -7,6 +7,8 @@ module MainRequests
 			
 		command,content = if opts[:photo] 
 			 ['send_photo', "photo: \"#{opts[:photo]}\""]
+			elsif opts[:document] 
+			 ['send_document', "document: \"#{opts[:document]}\""]
 			else
 			 ['send', "text: \"#{opts[:text]}\""]
 		end	
@@ -21,7 +23,6 @@ module MainRequests
 			contact_request: opts[:contact_request],
 			formatted_answer: opts[:formatted_answer],
 			location_request: opts[:location_request]).#{command}}
-		
 		eval send_code										
 
 	end

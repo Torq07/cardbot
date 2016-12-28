@@ -126,7 +126,7 @@ class ChatMode
 				t.card.status = 'expired' if t.card.balance<0
 				t.card.save
 				t.update_attribute(:status, 'done')
-				redeem_succesful(t.card)
+				redeem_succesful(t.card,t.amount)
 			when 'deactivation' 
 				t.card.update_attribute(:status, 'deactivated')
 				t.update_attribute(:status, 'done')
@@ -144,47 +144,58 @@ class ChatMode
 		request(text: text, force_reply: true)	
 	end
 
-	def redeem_succesful(card)
+	def redeem_succesful(card,amount)
 		cid = card.customer_id||"not assigned"
 		balance = card.balance
 		card_id = card.id
+		store_name = Store.find(card.store_id).store_name
 		expire = card.expiring_date
 		text="Redemption Successful\n"+
 				 "Cust id: #{cid}\n"+
 				 "Card No: #{card_id}\n"+
+				 "Store name: #{store_name}\n"+
 				 "New Balance $#{balance}\n"+
 				 "This Card will expire on #{expire}"
-		pdf=generate_pdf(card)
+		receipt_array = [
+			[:image,["/home/torq07/Work/Fiverr/piousmusabaila/cardbot/recipies/app_icon.png", :position => :center, :width => 150, :height => 150]],
+			[:move_down,40],
+			[:text,["Redemption receipt",{:align => :center, :size => 40}]],
+			[:text,["Date: #{Time.now.strftime("%Y/%m/%d %H:%M")}", {:align => :center, :size => 34}]],
+			[:move_down,20],
+			[:text,["Store Name: #{store_name}", {:size => 28}]],
+			[:stroke_horizontal_rule],
+			[:move_down,20],
+			[:text,["Cust id: #{cid}",{:size => 28}]],
+			[:stroke_horizontal_rule],
+			[:move_down,20],
+			[:text,["Card No: #{card.id}", {:size => 28}]],
+			[:stroke_horizontal_rule],
+			[:move_down,20],
+			[:text,["Redeemed amount: #{amount}", {:size => 28}]],
+			[:stroke_horizontal_rule],
+			[:move_down,20],
+			[:text,["New Balance: #{card.balance}", {:size => 28}]],
+			[:stroke_horizontal_rule],
+			[:move_down,20],
+			[:text,["This Card will expire on #{card.expiring_date}", {:size => 28}]],
+			[:stroke_horizontal_rule],
+			[:move_down,60],
+			[:text,["You can check your voucher balance by texting balance to giglea using facebook messenger", {:size => 24}]],
+		]
+		time_now=Time.now.strftime("%Y_%m_%d_%H_%M")
+		pdf_name="Card_#{card.id}_#{time_now}.pdf"
+		pdf=generate_pdf(pdf_name,receipt_array)
 		request(text:text,answers:@answers)
 		MessageSender.new(bot:bot, chat: message.from, document:pdf).send_document
 	end
 
-	def generate_pdf(card)
-		time_now=Time.now.strftime("%Y_%m_%d_%H_%M")
-		pdf_name="Card_#{card.id}_#{time_now}.pdf"
-		Prawn::Document.generate("/home/torq07/Work/Fiverr/piousmusabaila/cardbot/recipies/#{pdf_name}") do
-			text "Redemption receipt", :align => :center, :size => 18
-			text "Date: #{Time.now.strftime("%Y/%m/%d %H:%M")}", :align => :center, :size => 16
-			move_down 20
-			if card.customer_id
-		 	 text "Cust id: #{card.customer_id}"
-		 	else
-		 	 text "Cust id: not assigned"
-		 	end 
-			stroke_horizontal_rule
-			move_down 10
-		  text "Card No: #{card.id}"
-			stroke_horizontal_rule
-			move_down 10
-		  text "New Balance: #{card.balance}"
-			stroke_horizontal_rule
-			move_down 10
-		  text "This Card will expire on #{card.expiring_date}"
-			stroke_horizontal_rule
-			move_down 50
-			image "/home/torq07/Work/Fiverr/piousmusabaila/cardbot/recipies/app_icon.png", :position => :right, :width => 100, :height => 100
+	def generate_pdf(name,text_array)
+		Prawn::Document.generate("/home/torq07/Work/Fiverr/piousmusabaila/cardbot/recipies/#{name}") do
+			text_array.each do |k|
+				send(k[0],*k[1])
+			end	
 		end
-		"/home/torq07/Work/Fiverr/piousmusabaila/cardbot/recipies/#{pdf_name}"
+		"/home/torq07/Work/Fiverr/piousmusabaila/cardbot/recipies/#{name}"
 	end
 
 	def deactivate_card
@@ -210,25 +221,48 @@ class ChatMode
 		redeemed_text = generate_text(redeemed_cards.map{|t| Card.find(t)})
 		text="Redeemed Cards:\n\n#{redeemed_text}\n\n Activated Cards:\n\n#{activated_text}"
 		request(text:text, answers:@answers)
+		print_array = [
+			[:image,["/home/torq07/Work/Fiverr/piousmusabaila/cardbot/recipies/app_icon.png", :position => :center, :width => 150, :height => 150]],
+			[:move_down,40],
+			[:text,["Activated Cards",{:align => :center, :size => 40}]],
+			[:text,[activated_text,{:align => :left, :size => 30}]],
+			[:stroke_horizontal_rule],
+			[:move_down,40],
+			[:text,["Redeemed Cards",{:align => :center, :size => 40}]],
+			[:text,[redeemed_text,{:align => :left, :size => 30}]]
+		]
+		time_now=Time.now.strftime("%Y_%m_%d_%H_%M")
+		name="Stats_#{time_now}"
+		pdf=generate_pdf(name,print_array)
+		MessageSender.new(bot:bot, chat: message.from, document:pdf).send_document
 	end	
 
 	def generate_text(array)
-		flyers,vouchers,cashs,loyals,coupons = 0,0,0,0,0
+		flyers,vouchers,cashs,loyals,coupons = [0,0],[0,0],[0,0],[0,0],[0,0]
 		array.each do |card|
 			case card.card_product.type_name 
 			when 'flyer' 
-				flyers+=1
+				flyers[0]+=1
+				flyers[1]+=card.balance
 			when 'coupon' 
-				coupons+=1
+				coupons[0]+=1
+				coupons[1]+=card.balance
 			when 'loyal' 
-				loyals+=1
+				loyals[0]+=1
+				loyals[1]+=card.balance
 			when 'cash' 
-				cashs+=1
+				cashs[0]+=1
+				cashs[1]+=card.balance
 			when 'voucher' 
-				vouchers+=1
+				vouchers[0]+=1
+				vouchers[1]+=card.balance
 			end
 		end
-		"Flyers : #{flyers}\nVouchers: #{vouchers}\nCoupons #{coupons}\nLoyalty cards:#{loyals}\nCash cards#{cashs}"			
+		"Flyers : #{flyers[0]} $#{flyers[1]}\n"+
+		"Vouchers: #{vouchers[0]} $#{vouchers[1]}\n"+
+		"Coupons: #{coupons[0]} $#{coupons[1]}\n"+
+		"Loyalty cards: #{loyals[0]} $#{loyals[0]}\n"+
+		"Cash cards: #{cashs[0]} $#{cashs[1]}"			
 	end
 
 end	

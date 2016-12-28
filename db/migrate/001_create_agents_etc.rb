@@ -26,6 +26,7 @@ class CreateAgentsEtc < ActiveRecord::Migration
       t.date :expiring_date
       t.references :card_product, index: true, foreign_key: true
       t.references :customer, index: true, foreign_key: true
+      t.references :store, index: true, foreign_key: true
     end
 
     create_table :card_transactions, force: true do |t|

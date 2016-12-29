@@ -232,7 +232,7 @@ class ChatMode
 			[:text,[redeemed_text,{:align => :left, :size => 30}]]
 		]
 		time_now=Time.now.strftime("%Y_%m_%d_%H_%M")
-		name="Stats_#{time_now}"
+		name="Stats_#{time_now}.pdf"
 		pdf=generate_pdf(name,print_array)
 		MessageSender.new(bot:bot, chat: message.from, document:pdf).send_document
 	end	

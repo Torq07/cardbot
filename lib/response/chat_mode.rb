@@ -26,14 +26,36 @@ class ChatMode
   			if Card.exists?(card_id)
   				user.card_transactions.create(card_id: card_id, trans_type: 'redeem')
   				if Card.find(card_id).card_product.type_name == 'flyer'
-  					run_trunsactions
+  					text = 'Please tell me customer cell number'
+  					request(text: text, force_reply:true)
   				else	
   					request_redeem_value 
   				end	
   			else
   				request(text:"Sorry there is no card with such id",answers:@answers)
   			end	
-  		when 'Please enter redeem value'	
+  		when 'Please tell me customer cell number'
+  			customer_id = message.text.strip.to_i
+  			Customer.find_or_create_by(id:customer_id)
+  			user.card_transactions.last.card.update_attribute(:customer_id, customer_id)
+  			text = 'Please tell me customer first name'
+				request(text: text, force_reply:true)
+  		when 'Please tell me customer first name'
+  			name = message.text.strip
+  			customer = Customer.find(user.card_transactions.last.card.customer_id)
+  			customer.update_attribute(:first_name, name)
+  			text = 'Please tell me customer second name'
+				request(text: text, force_reply:true)
+  		when 'Please tell me customer second name'
+  			second_name = message.text.strip
+  			customer = Customer.find(user.card_transactions.last.card.customer_id)
+  			customer.update_attribute(:last_name, second_name)
+  			text = 'Please enter amount the transacted'
+				request(text: text, force_reply:true)
+  		when 'Please enter amount the transacted'
+  			user.card_transactions.last.update_attribute(:amount, -1*message.text.strip.to_i)
+  			run_trunsactions
+  		when 'Please enter redeem value'
   			user.card_transactions.last.update_attribute(:amount, message.text.strip.to_i)
   			run_trunsactions
   		when 'Please enter card id for card activation'
@@ -171,7 +193,7 @@ class ChatMode
 			[:text,["Card No: #{card.id}", {:size => 28}]],
 			[:stroke_horizontal_rule],
 			[:move_down,20],
-			[:text,["Redeemed amount: #{amount}", {:size => 28}]],
+			[:text,["Redeemed amount: #{amount.abs}", {:size => 28}]],
 			[:stroke_horizontal_rule],
 			[:move_down,20],
 			[:text,["New Balance: #{card.balance}", {:size => 28}]],

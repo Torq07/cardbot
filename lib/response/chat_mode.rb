@@ -88,7 +88,7 @@ class ChatMode
   			card_id = message.text.strip.to_i
   			if Card.exists?(card_id)
   				balance = Card.find(card_id).balance
-  				request(text:"Card balance is :#{balance}",answers:@answers)
+  				request(text:"Card balance is : $#{sprintf('%.2f', balance)}",answers:@answers)
   			else
   				request(text:"Sorry there is no card with such id",answers:@answers)
   			end	
@@ -97,16 +97,18 @@ class ChatMode
 	    case message.text
 	      when '/start'
 	        answer_with_greeting_message
-	      when 'Redeem Value'
+	      when /Redeem Value||\/redeem/i
 	      	redeem_value
-				when 'Check Balance'
+				when /Check Balance||\/balance/i
 					check_balance
-				when 'Activate Card'
+				when /Activate Card||\/activate/i
 					activate_card
-				when 'Deactivate Card'
+				when /Deactivate Card||\/deactivate/i
 					deactivate_card 
 				when /\/print/i
 					print_stats
+				else 
+					request(text:"Valid commands are /redeem, /activate, /balance, /print and /deactivate", answers: @answers)
 	    end
 	  elsif message.location
 	  	
@@ -176,7 +178,7 @@ class ChatMode
 				 "Cust id: #{cid}\n"+
 				 "Card No: #{card_id}\n"+
 				 "Store name: #{store_name}\n"+
-				 "New Balance $#{balance}\n"+
+				 "New Balance $#{sprintf('%.2f', balance)}\n"+
 				 "This Card will expire on #{expire}"
 		receipt_array = [
 			[:image,["/home/torq07/Work/Fiverr/piousmusabaila/cardbot/recipies/app_icon.png", :position => :center, :width => 150, :height => 150]],
@@ -193,10 +195,10 @@ class ChatMode
 			[:text,["Card No: #{card.id}", {:size => 28}]],
 			[:stroke_horizontal_rule],
 			[:move_down,20],
-			[:text,["Redeemed amount: #{amount.abs}", {:size => 28}]],
+			[:text,["Redeemed amount: $#{sprintf('%.2f', amount.abs)}", {:size => 28}]],
 			[:stroke_horizontal_rule],
 			[:move_down,20],
-			[:text,["New Balance: #{card.balance}", {:size => 28}]],
+			[:text,["New Balance: $#{sprintf('%.2f', card.balance)}", {:size => 28}]],
 			[:stroke_horizontal_rule],
 			[:move_down,20],
 			[:text,["This Card will expire on #{card.expiring_date}", {:size => 28}]],
@@ -280,11 +282,11 @@ class ChatMode
 				vouchers[1]+=card.balance
 			end
 		end
-		"Flyers : #{flyers[0]} $#{flyers[1]}\n"+
-		"Vouchers: #{vouchers[0]} $#{vouchers[1]}\n"+
-		"Coupons: #{coupons[0]} $#{coupons[1]}\n"+
-		"Loyalty cards: #{loyals[0]} $#{loyals[0]}\n"+
-		"Cash cards: #{cashs[0]} $#{cashs[1]}"			
+		"Flyers : #{flyers[0]} $#{sprintf('%.2f', flyers[1])}\n"+
+		"Vouchers: #{vouchers[0]} $#{sprintf('%.2f', vouchers[1])}\n"+
+		"Coupons: #{coupons[0]} $#{sprintf('%.2f', coupons[1])}\n"+
+		"Loyalty cards: #{loyals[0]} $#{sprintf('%.2f', loyals[1])}\n"+
+		"Cash cards: #{cashs[0]} $#{sprintf('%.2f', cashs[1])}"			
 	end
 
 end	

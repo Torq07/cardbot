@@ -36,11 +36,19 @@ class ChatMode
   			end	
   		when 'Please tell me customer cell number'
   			customer_id = message.text.strip.to_i
-  			Customer.find_or_create_by(id:customer_id)
+  			activation_code = 1000+rand(9000)
+  			send = Twillo.send("+#{customer_id}","Activation code: #{activation_code}\n"+
+  															"This is activation code for our facebook bot")
+  			customer = Customer.find_or_create_by(id:customer_id)
+  			customer.update_attribute(:activation_code,activation_code)
   			user.card_transactions.last.card.update_attribute(:customer_id, customer_id)
   			text = 'Please tell me customer first name'
+  			if !send
+	  			text+="\nWARN: \nCustomer didn't receive his activation code."+
+	  						"Please pass this code #{activation_code} to customer"
+	  		end				
 				request(text: text, force_reply:true)
-  		when 'Please tell me customer first name'
+  		when /Please tell me customer first name/i
   			name = message.text.strip
   			customer = Customer.find(user.card_transactions.last.card.customer_id)
   			customer.update_attribute(:first_name, name)
@@ -62,9 +70,6 @@ class ChatMode
   			card_id = message.text.strip.to_i
   			if Card.exists?(card_id)
   				user.card_transactions.create(card_id: card_id, trans_type:'activation')
-  			# else
-  			# 	Card.create(id:card_id)
-  			# 	user.card_transactions.create(card_id: card_id, trans_type:'activation')
   			end	
   			request_customer_id
   		when 'Please enter customer id'
@@ -97,13 +102,13 @@ class ChatMode
 	    case message.text
 	      when '/start'
 	        answer_with_greeting_message
-	      when /Redeem Value||\/redeem/i
+	      when /(Redeem Value)|(\/redeem)/i
 	      	redeem_value
-				when /Check Balance||\/balance/i
+				when /(Check Balance)|(\/balance)/i
 					check_balance
-				when /Activate Card||\/activate/i
+				when /(Activate Card)|(\/activate)/i
 					activate_card
-				when /Deactivate Card||\/deactivate/i
+				when /(Deactivate Card)|(\/deactivate)/i
 					deactivate_card 
 				when /\/print/i
 					print_stats
